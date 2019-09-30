@@ -3,6 +3,7 @@ module Main exposing (Model, Msg(..), init, main, update, view)
 import Browser
 import Debug exposing (log)
 import Html exposing (..)
+import Keyboard exposing (RawKey)
 import Svg exposing (..)
 import Svg.Attributes exposing (..)
 import Time
@@ -51,32 +52,61 @@ init _ =
 
 type Msg
     = Tick Time.Posix
+    | KeyDown RawKey
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    let
-        _ =
-            log "model" model
-    in
     case msg of
         Tick _ ->
-            -- move the food around the grid
-            let
-                nextX =
-                    modBy gridWidth (model.food.x + 1)
+            ( { model | snake = updateSnake model.snake model.direction }, Cmd.none )
 
-                nextY =
-                    modBy gridHeight (model.food.y + 1)
-            in
-            ( { model | food = { x = nextX, y = nextY } }
-            , Cmd.none
-            )
+        KeyDown rawKey ->
+            case Keyboard.anyKeyOriginal rawKey of
+                Just Keyboard.ArrowUp ->
+                    ( { model | direction = Up }, Cmd.none )
+
+                Just Keyboard.ArrowDown ->
+                    ( { model | direction = Down }, Cmd.none )
+
+                Just Keyboard.ArrowLeft ->
+                    ( { model | direction = Left }, Cmd.none )
+
+                Just Keyboard.ArrowRight ->
+                    ( { model | direction = Right }, Cmd.none )
+
+                _ ->
+                    ( model, Cmd.none )
+
+
+updateSnake snake direction =
+    List.map (updateSnakePart direction) snake
+
+
+updateSnakePart direction =
+    case direction of
+        Up ->
+            \pos -> { x = pos.x, y = pos.y - 1 }
+
+        Down ->
+            \pos -> { x = pos.x, y = pos.y + 1 }
+
+        Left ->
+            \pos -> { x = pos.x - 1, y = pos.y }
+
+        Right ->
+            \pos -> { x = pos.x + 1, y = pos.y }
+
+        None ->
+            \pos -> pos
 
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Time.every 300 Tick
+    Sub.batch
+        [ Time.every 100 Tick
+        , Keyboard.downs KeyDown
+        ]
 
 
 
@@ -84,7 +114,7 @@ subscriptions model =
 
 
 cellSize =
-    10
+    30
 
 
 gridWidth =
@@ -117,31 +147,30 @@ gridHeightStr =
 
 view : Model -> Html Msg
 view model =
-    svg
-        [ class "grid"
-        , viewBox ("0 0 " ++ gridWidthStr ++ " " ++ gridHeightStr)
+    div [ width "100%", height "100%" ]
+        [ h1 [] [ Html.text "Snake!" ]
+        , p [] [ Html.text "Grab the food, don't hit the walls!" ]
+        , svg [ viewBox ("0 0 " ++ gridWidthStr ++ " " ++ gridHeightStr), width gridWidthStr, height gridHeightStr ]
+            ([ background, cell "red" model.food ] ++ List.map (cell "green") model.snake)
         ]
-        (renderBackground ++ renderCell model.food)
 
 
-renderBackground =
-    [ rect
+background =
+    rect
         [ width gridWidthStr
         , height gridHeightStr
         , fill "#997B1F"
         ]
         []
-    ]
 
 
-renderCell position =
-    [ rect
+cell color position =
+    rect
         [ x (String.fromInt (position.x * cellSize))
         , y (String.fromInt (position.y * cellSize))
         , width cellSizeStr
         , height cellSizeStr
-        , fill "green"
+        , fill color
         , stroke "gray"
         ]
         []
-    ]
