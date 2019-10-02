@@ -59,7 +59,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Tick _ ->
-            ( { model | snake = updateSnake model.snake model.direction }, Cmd.none )
+            ( { model | snake = moveSnake model.snake model.direction }, Cmd.none )
 
         KeyDown rawKey ->
             case Keyboard.anyKeyOriginal rawKey of
@@ -79,11 +79,28 @@ update msg model =
                     ( model, Cmd.none )
 
 
-updateSnake snake direction =
-    List.map (updateSnakePart direction) snake
+moveSnake snake direction =
+    List.map (nextSnakePart direction) snake
 
 
-updateSnakePart direction =
+growSnake snake direction =
+    let
+        head =
+            case List.head snake of
+                Just h ->
+                    h
+
+                -- This case should never happen. How can I structure this better?
+                Nothing ->
+                    { x = 0, y = 0 }
+
+        nextHead =
+            nextSnakePart direction head
+    in
+    nextHead :: snake
+
+
+nextSnakePart direction =
     case direction of
         Up ->
             \pos -> { x = pos.x, y = pos.y - 1 }
