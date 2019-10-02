@@ -88,16 +88,18 @@ update msg model =
             ( { model | food = { x = x, y = y } }, Cmd.none )
 
 
+moveSnake : List Position -> Direction -> List Position
 moveSnake snake direction =
-    List.map (nextSnakePart direction) snake
+    nextSnakeHead snake direction :: List.take (List.length snake - 1) snake
 
 
 growSnake snake direction =
-    let
-        nextHead =
-            nextSnakePart direction (snakeHead snake)
-    in
-    nextHead :: snake
+    nextSnakeHead snake direction :: snake
+
+
+nextSnakeHead : List Position -> Direction -> Position
+nextSnakeHead snake direction =
+    nextSnakePart direction (snakeHead snake)
 
 
 nextSnakePart direction =
@@ -135,7 +137,7 @@ isEatingFood { snake, food } =
 
 randomPosition : Random.Generator ( Int, Int )
 randomPosition =
-    Random.pair (Random.int 0 gridWidth) (Random.int 0 gridHeight)
+    Random.pair (Random.int 0 (gridWidth - 1)) (Random.int 0 (gridHeight - 1))
 
 
 subscriptions : Model -> Sub Msg
