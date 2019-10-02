@@ -66,7 +66,7 @@ update msg model =
             if model.gameOver then
                 ( model, Cmd.none )
 
-            else if collisionWithWall model.snake then
+            else if collisionWithWall model.snake || collisionWithSelf model.snake then
                 ( { model | gameOver = True }, Cmd.none )
 
             else if isEatingFood model then
@@ -102,6 +102,14 @@ collisionWithWall snake =
             snakeHead snake
     in
     head.x < 0 || head.x >= gridWidth || head.y < 0 || head.y >= gridHeight
+
+
+collisionWithSelf snake =
+    let
+        head =
+            snakeHead snake
+    in
+    List.member head (List.drop 1 snake)
 
 
 moveSnake : List Position -> Direction -> List Position
