@@ -4,6 +4,7 @@ import Browser
 import Debug exposing (log)
 import Html exposing (..)
 import Keyboard exposing (RawKey)
+import Random
 import Svg exposing (..)
 import Svg.Attributes exposing (..)
 import Time
@@ -53,13 +54,18 @@ init _ =
 type Msg
     = Tick Time.Posix
     | KeyDown RawKey
+    | NewFoodPosition ( Int, Int )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Tick _ ->
-            ( { model | snake = moveSnake model.snake model.direction }, Cmd.none )
+            if isEatingFood model then
+                ( { model | snake = growSnake model.snake model.direction }, Random.generate NewFoodPosition randomPosition )
+
+            else
+                ( { model | snake = moveSnake model.snake model.direction }, Cmd.none )
 
         KeyDown rawKey ->
             case Keyboard.anyKeyOriginal rawKey of
@@ -78,6 +84,9 @@ update msg model =
                 _ ->
                     ( model, Cmd.none )
 
+        NewFoodPosition ( x, y ) ->
+            ( { model | food = { x = x, y = y } }, Cmd.none )
+
 
 moveSnake snake direction =
     List.map (nextSnakePart direction) snake
@@ -85,17 +94,8 @@ moveSnake snake direction =
 
 growSnake snake direction =
     let
-        head =
-            case List.head snake of
-                Just h ->
-                    h
-
-                -- This case should never happen. How can I structure this better?
-                Nothing ->
-                    { x = 0, y = 0 }
-
         nextHead =
-            nextSnakePart direction head
+            nextSnakePart direction (snakeHead snake)
     in
     nextHead :: snake
 
@@ -116,6 +116,26 @@ nextSnakePart direction =
 
         None ->
             \pos -> pos
+
+
+snakeHead snake =
+    case List.head snake of
+        Just h ->
+            h
+
+        -- This case should never happen. How can I structure this better?
+        -- Can I type "snake" as a list with at least one element?
+        Nothing ->
+            { x = 0, y = 0 }
+
+
+isEatingFood { snake, food } =
+    snakeHead snake == food
+
+
+randomPosition : Random.Generator ( Int, Int )
+randomPosition =
+    Random.pair (Random.int 0 gridWidth) (Random.int 0 gridHeight)
 
 
 subscriptions : Model -> Sub Msg
