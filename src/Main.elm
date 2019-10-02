@@ -22,6 +22,7 @@ type alias Model =
     { food : Position
     , snake : List Position
     , direction : Direction
+    , gameOver : Bool
     }
 
 
@@ -42,6 +43,7 @@ init _ =
     ( { food = { x = 5, y = 3 }
       , snake = [ { x = 0, y = 0 } ]
       , direction = None
+      , gameOver = True
       }
     , Cmd.none
     )
@@ -61,7 +63,10 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Tick _ ->
-            if isEatingFood model then
+            if model.gameOver then
+                ( model, Cmd.none )
+
+            else if isEatingFood model then
                 ( { model | snake = growSnake model.snake model.direction }, Random.generate NewFoodPosition randomPosition )
 
             else
@@ -189,8 +194,12 @@ view model =
     div [ width "100%", height "100%" ]
         [ h1 [] [ Html.text "Snake!" ]
         , p [] [ Html.text "Grab the food, don't hit the walls!" ]
-        , svg [ viewBox ("0 0 " ++ gridWidthStr ++ " " ++ gridHeightStr), width gridWidthStr, height gridHeightStr ]
-            ([ background, cell "red" model.food ] ++ List.map (cell "green") model.snake)
+        , if model.gameOver then
+            h1 [] [ Html.text "Game Over!" ]
+
+          else
+            svg [ viewBox ("0 0 " ++ gridWidthStr ++ " " ++ gridHeightStr), width gridWidthStr, height gridHeightStr ]
+                ([ background, cell "red" model.food ] ++ List.map (cell "green") model.snake)
         ]
 
 
