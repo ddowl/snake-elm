@@ -43,7 +43,7 @@ init _ =
     ( { food = { x = 5, y = 3 }
       , snake = [ { x = 0, y = 0 } ]
       , direction = None
-      , gameOver = True
+      , gameOver = False
       }
     , Cmd.none
     )
@@ -65,6 +65,9 @@ update msg model =
         Tick _ ->
             if model.gameOver then
                 ( model, Cmd.none )
+
+            else if collisionWithWall model.snake then
+                ( { model | gameOver = True }, Cmd.none )
 
             else if isEatingFood model then
                 ( { model | snake = growSnake model.snake model.direction }, Random.generate NewFoodPosition randomPosition )
@@ -91,6 +94,14 @@ update msg model =
 
         NewFoodPosition ( x, y ) ->
             ( { model | food = { x = x, y = y } }, Cmd.none )
+
+
+collisionWithWall snake =
+    let
+        head =
+            snakeHead snake
+    in
+    head.x < 0 || head.x >= gridWidth || head.y < 0 || head.y >= gridHeight
 
 
 moveSnake : List Position -> Direction -> List Position
