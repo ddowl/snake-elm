@@ -76,24 +76,42 @@ update msg model =
                 ( { model | snake = moveSnake model.snake model.direction }, Cmd.none )
 
         KeyDown rawKey ->
-            case Keyboard.anyKeyOriginal rawKey of
-                Just Keyboard.ArrowUp ->
-                    ( { model | direction = Up }, Cmd.none )
-
-                Just Keyboard.ArrowDown ->
-                    ( { model | direction = Down }, Cmd.none )
-
-                Just Keyboard.ArrowLeft ->
-                    ( { model | direction = Left }, Cmd.none )
-
-                Just Keyboard.ArrowRight ->
-                    ( { model | direction = Right }, Cmd.none )
-
-                _ ->
-                    ( model, Cmd.none )
+            ( { model | direction = nextDirection rawKey model.direction }, Cmd.none )
 
         NewFoodPosition ( x, y ) ->
             ( { model | food = { x = x, y = y } }, Cmd.none )
+
+
+nextDirection : RawKey -> Direction -> Direction
+nextDirection inputKey currDirection =
+    -- Ensure that the snake can't move backwards into itself
+    case ( Keyboard.anyKeyOriginal inputKey, currDirection ) of
+        ( Just Keyboard.ArrowUp, Down ) ->
+            Down
+
+        ( Just Keyboard.ArrowUp, _ ) ->
+            Up
+
+        ( Just Keyboard.ArrowDown, Up ) ->
+            Up
+
+        ( Just Keyboard.ArrowDown, _ ) ->
+            Down
+
+        ( Just Keyboard.ArrowLeft, Right ) ->
+            Right
+
+        ( Just Keyboard.ArrowLeft, _ ) ->
+            Left
+
+        ( Just Keyboard.ArrowRight, Left ) ->
+            Left
+
+        ( Just Keyboard.ArrowRight, _ ) ->
+            Right
+
+        _ ->
+            currDirection
 
 
 collisionWithWall snake =
